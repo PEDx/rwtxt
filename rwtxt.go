@@ -8,11 +8,12 @@ import (
 	"strings"
 	"time"
 
+	"rwtxt/pkg/db"
+	"rwtxt/pkg/utils"
+
 	log "github.com/cihub/seelog"
 	"github.com/gorilla/websocket"
 	"github.com/schollz/documentsimilarity"
-	"github.com/schollz/rwtxt/pkg/db"
-	"github.com/schollz/rwtxt/pkg/utils"
 )
 
 const DefaultBind = ":8152"

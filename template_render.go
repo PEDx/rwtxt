@@ -14,9 +14,10 @@ import (
 	"strings"
 	"time"
 
+	"rwtxt/pkg/db"
+	"rwtxt/pkg/utils"
+
 	log "github.com/cihub/seelog"
-	"github.com/schollz/rwtxt/pkg/db"
-	"github.com/schollz/rwtxt/pkg/utils"
 )
 
 const introText = "This note is empty. Click to edit it."

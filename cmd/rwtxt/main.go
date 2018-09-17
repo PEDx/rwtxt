@@ -7,9 +7,10 @@ import (
 	"runtime/pprof"
 	"time"
 
+	"rwtxt"
+	"rwtxt/pkg/db"
+
 	log "github.com/cihub/seelog"
-	"github.com/schollz/rwtxt"
-	"github.com/schollz/rwtxt/pkg/db"
 )
 
 var (

@@ -11,10 +11,11 @@ import (
 	"sync"
 	"time"
 
+	"rwtxt/pkg/utils"
+
 	log "github.com/cihub/seelog"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/pkg/errors"
-	"github.com/schollz/rwtxt/pkg/utils"
 	"github.com/schollz/sqlite3dump"
 	"github.com/schollz/versionedtext"
 )
@@ -81,7 +82,7 @@ func (fs *FileSystem) initializeDB() (err error) {
 	// 	_, err = fs.db.Exec(string(s))
 	// 	return err
 	// }
-	sqlStmt := `CREATE TABLE IF NOT EXISTS 
+	sqlStmt := `CREATE TABLE IF NOT EXISTS
 		fs (
 			id TEXT NOT NULL PRIMARY KEY,
 			domainid INTEGER,
@@ -97,14 +98,14 @@ func (fs *FileSystem) initializeDB() (err error) {
 		return
 	}
 
-	sqlStmt = `CREATE VIRTUAL TABLE IF NOT EXISTS 
+	sqlStmt = `CREATE VIRTUAL TABLE IF NOT EXISTS
 		fts USING fts4 (id,data);`
 	_, err = fs.db.Exec(sqlStmt)
 	if err != nil {
 		err = errors.Wrap(err, "creating virtual table")
 	}
 
-	sqlStmt = `CREATE TABLE IF NOT EXISTS 
+	sqlStmt = `CREATE TABLE IF NOT EXISTS
 	domains (
 		id INTEGER NOT NULL PRIMARY KEY,
 		name TEXT,
@@ -216,8 +217,8 @@ func (fs *FileSystem) SaveBlob(id string, name string, blob []byte) (err error) 
 		id,
 		name,
 		data
-	) 
-		VALUES 	
+	)
+		VALUES
 	(
 		?,
 		?,
@@ -313,10 +314,10 @@ func (fs *FileSystem) Save(f File) (err error) {
 		created,
 		modified,
 		history
-	) 
-		values 	
+	)
+		values
 	(
-		?, 
+		?,
 		?,
 		?,
 		?,
@@ -352,7 +353,7 @@ func (fs *FileSystem) Save(f File) (err error) {
 		return errors.Wrap(err, "begin Save")
 	}
 	stmt2, err := tx2.Prepare(`
-	UPDATE fs SET 
+	UPDATE fs SET
 		slug = ?,
 		modified = ?,
 		history = ?
@@ -570,12 +571,12 @@ func (fs *FileSystem) CheckKey(key string) (domain string, err error) {
 
 func (fs *FileSystem) checkKey(key string) (domain string, err error) {
 	stmt, err := fs.db.Prepare(`
-	SELECT 
+	SELECT
 		domains.name
-	FROM keys 
-	
-	INNER JOIN domains 
-		ON keys.domainid=domains.id 
+	FROM keys
+
+	INNER JOIN domains
+		ON keys.domainid=domains.id
 
 	WHERE
 		keys.key=?`)
@@ -684,8 +685,8 @@ func (fs *FileSystem) UpdateDomain(domain, password string, ispublic bool) (err 
 	}
 
 	if password == "" {
-		stmt, err = tx.Prepare(`UPDATE domains 
-		SET 
+		stmt, err = tx.Prepare(`UPDATE domains
+		SET
 		ispublic = ?
 		WHERE name = ?`)
 		if err != nil {
@@ -700,9 +701,9 @@ func (fs *FileSystem) UpdateDomain(domain, password string, ispublic bool) (err 
 		if err != nil {
 			return errors.Wrap(err, "can't hash password")
 		}
-		stmt, err = tx.Prepare(`UPDATE domains 
-		SET 
-		hashed_pass = ?, 
+		stmt, err = tx.Prepare(`UPDATE domains
+		SET
+		hashed_pass = ?,
 		ispublic = ?
 		WHERE name = ?`)
 		if err != nil {
@@ -818,8 +819,8 @@ func (fs *FileSystem) SetSimilar(id string, similarids []string) (err error) {
 	(
 		fsid,
 		fsid_similar
-	) 
-		VALUES 	
+	)
+		VALUES
 	(
 		?,
 		?
@@ -848,10 +849,10 @@ func (fs *FileSystem) GetAll(domain string) (files []File, err error) {
 	fs.Lock()
 	defer fs.Unlock()
 	files, err = fs.getAllFromPreparedQuery(`
-	SELECT fs.id,fs.slug,fs.created,fs.modified,fts.data,fs.history,fs.views FROM fs 
-	INNER JOIN fts ON fs.id=fts.id 
+	SELECT fs.id,fs.slug,fs.created,fs.modified,fts.data,fs.history,fs.views FROM fs
+	INNER JOIN fts ON fs.id=fts.id
 	INNER JOIN domains ON fs.domainid=domains.id
-	WHERE 
+	WHERE
 		domains.name = ?
 		AND LENGTH(fts.data) > 0
 	ORDER BY fs.modified DESC`, domain)
@@ -866,11 +867,11 @@ func (fs *FileSystem) GetSimilar(fileid string) (files []File, err error) {
 	fs.Lock()
 	defer fs.Unlock()
 	return fs.getAllFromPreparedQuery(`
-	SELECT fs.id,fs.slug,fs.created,fs.modified,fts.data,fs.history,fs.views FROM fs 
-	INNER JOIN fts ON fs.id=fts.id 
-	WHERE 
+	SELECT fs.id,fs.slug,fs.created,fs.modified,fts.data,fs.history,fs.views FROM fs
+	INNER JOIN fts ON fs.id=fts.id
+	WHERE
 		LENGTH(fts.data) > 0
-	AND 
+	AND
 		fs.id IN (
 			SELECT fsid_similar FROM similar WHERE fsid = ?
 		)
@@ -882,10 +883,10 @@ func (fs *FileSystem) GetTopX(domain string, num int) (files []File, err error) 
 	fs.Lock()
 	defer fs.Unlock()
 	return fs.getAllFromPreparedQuery(`
-	SELECT fs.id,fs.slug,fs.created,fs.modified,fts.data,fs.history,fs.views FROM fs 
-	INNER JOIN fts ON fs.id=fts.id 
+	SELECT fs.id,fs.slug,fs.created,fs.modified,fts.data,fs.history,fs.views FROM fs
+	INNER JOIN fts ON fs.id=fts.id
 	INNER JOIN domains ON fs.domainid=domains.id
-	WHERE 
+	WHERE
 		domains.name = ?
 		AND LENGTH(fts.data) > 0
 	ORDER BY fs.modified DESC LIMIT ?`, domain, num)
@@ -896,10 +897,10 @@ func (fs *FileSystem) GetTopXMostViews(domain string, num int) (files []File, er
 	fs.Lock()
 	defer fs.Unlock()
 	return fs.getAllFromPreparedQuery(`
-	SELECT fs.id,fs.slug,fs.created,fs.modified,fts.data,fs.history,fs.views FROM fs 
-	INNER JOIN fts ON fs.id=fts.id 
+	SELECT fs.id,fs.slug,fs.created,fs.modified,fts.data,fs.history,fs.views FROM fs
+	INNER JOIN fts ON fs.id=fts.id
 	INNER JOIN domains ON fs.domainid=domains.id
-	WHERE 
+	WHERE
 		domains.name = ?
 		AND LENGTH(fts.data) > 0
 	ORDER BY fs.views DESC LIMIT ?`, domain, num)
@@ -915,11 +916,11 @@ func (fs *FileSystem) Get(id string, domain string) (files []File, err error) {
 func (fs *FileSystem) get(id string, domain string) (files []File, err error) {
 
 	files, err = fs.getAllFromPreparedQuery(`
-		SELECT fs.id,fs.slug,fs.created,fs.modified,fts.data,fs.history,fs.views FROM fs 
-		INNER JOIN fts ON fs.id=fts.id 
+		SELECT fs.id,fs.slug,fs.created,fs.modified,fts.data,fs.history,fs.views FROM fs
+		INNER JOIN fts ON fs.id=fts.id
 		INNER JOIN domains ON fs.domainid=domains.id
-		WHERE 
-			fs.id = ? 
+		WHERE
+			fs.id = ?
 			AND
 			domains.name = ?
 		ORDER BY modified DESC`, id, domain)
@@ -933,11 +934,11 @@ func (fs *FileSystem) get(id string, domain string) (files []File, err error) {
 
 	files, err = fs.getAllFromPreparedQuery(`
 	SELECT fs.id,fs.slug,fs.created,fs.modified,fts.data,fs.history,fs.views
-	FROM fs 
-	INNER JOIN fts ON fs.id=fts.id 
+	FROM fs
+	INNER JOIN fts ON fs.id=fts.id
 	INNER JOIN domains ON fs.domainid=domains.id
-	WHERE 
-		fs.id IN (SELECT id FROM fs WHERE slug=?) 
+	WHERE
+		fs.id IN (SELECT id FROM fs WHERE slug=?)
 		AND
 		domains.name = ?
 		ORDER BY modified DESC`, id, domain)
@@ -992,8 +993,8 @@ func (fs *FileSystem) Find(text string, domain string) (files []File, err error)
 	defer fs.Unlock()
 
 	files, err = fs.getAllFromPreparedQuery(`
-		SELECT fs.id,fs.slug,fs.created,fs.modified,snippet(fts,'<b>','</b>','...',-1,-30),fs.history,fs.views FROM fts 
-			INNER JOIN fs ON fs.id=fts.id 
+		SELECT fs.id,fs.slug,fs.created,fs.modified,snippet(fts,'<b>','</b>','...',-1,-30),fs.history,fs.views FROM fts
+			INNER JOIN fs ON fs.id=fts.id
 			INNER JOIN domains ON fs.domainid=domains.id
 			WHERE fts.data MATCH ?
 			AND domains.name = ?
@@ -1031,7 +1032,7 @@ func (fs *FileSystem) Exists(id string, domain string) (exists bool, err error) 
 	}
 
 	files, err = fs.getAllFromPreparedQuerySingleString(`
-	SELECT fs.id FROM fs 
+	SELECT fs.id FROM fs
 	INNER JOIN domains ON fs.domainid=domains.id
 	WHERE fs.slug = ? AND domains.name = ?`, id, domain)
 	if err != nil {
